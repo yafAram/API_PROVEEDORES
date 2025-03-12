@@ -26,7 +26,7 @@ class ProveedoresRepository {
                     $row['Contacto'],
                     $row['Telefono'],
                     $row['Email'],
-                    $row['Etatus']
+                    $row['Estatus']
                 );
                 $proveedoresArray[] = $proveedor;
             }

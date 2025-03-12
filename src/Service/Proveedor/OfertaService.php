@@ -12,7 +12,7 @@ class OfertaService {
         // Forzar la clave a 32 bytes
         $this->encryptionKey = hash('sha256', $encryptionKey, true);
     }
-    
+
 
     // Obtiene las ofertas, las convierte a JSON y las cifra.
     public function getEncryptedOffers(): string {

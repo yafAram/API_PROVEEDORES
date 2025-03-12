@@ -11,7 +11,13 @@ use App\Controller\Proveedor\OfertaController;
 use App\Repository\Proveedor\ProveedoresRepository;
 use App\Service\Proveedor\ProveedoresService;
 use App\Controller\Proveedor\ProveedoresController;
+use App\Repository\Repartidor\RepartidorRepository;
+use App\Service\Repartidor\RepartidorService;
+use App\Controller\Repartidor\RepartidorController;
+use App\Controller\OAuth\AuthController;
+use App\Service\OAuth\AuthService;
 use App\Middleware\AuthMiddleware;
+use App\Middleware\CorsMiddleware;
 use Slim\Psr7\Response;
 
 // Cargar configuración
@@ -19,19 +25,15 @@ $config = require __DIR__ . '/../config/Conexion.php';
 
 $app = AppFactory::create();
 
-// Manejar solicitudes OPTIONS
-$app->options('/{routes:.+}', function ($request, $response, $args) {
-    return $response;
-});
 
-// Middleware para agregar cabeceras CORS
-$app->add(function ($request, $handler) {
-    $response = $handler->handle($request);
-    return $response
-        ->withHeader('Access-Control-Allow-Origin', '*')
-        ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
-        ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-});
+// 1. Middleware CORS (PRIMERO)
+$app->add(new CorsMiddleware());
+
+// 2. Body Parser (para recibir JSON)
+$app->addBodyParsingMiddleware();
+
+// 3. Logger
+
 
 // Configuración de Monolog
 $logger = new Logger('api');
@@ -72,30 +74,55 @@ $errorMiddleware->setDefaultErrorHandler(function ($request, $exception, $displa
 
 // Conexión a la base de datos
 try {
-    $db = new Database($config);
-    $pdo = $db->getConnection();
+    $dbProveedores = new Database($config['db_proveedores']);
+    $pdoProveedores = $dbProveedores->getConnection();
+
+    $dbRepartidores = new Database($config['db_repartidores']);
+    $pdoRepartidores = $dbRepartidores->getConnection();
 } catch (Exception $e) {
     $logger->error('Database Connection Error', ['message' => $e->getMessage()]);
     die(json_encode(['error' => 'Error de conexión: ' . $e->getMessage()]));
 }
 
-// Instanciar dependencias para Ofertas
-$ofertasRepository = new OfertasRepository($pdo);
-$offerService = new OfertaService($ofertasRepository, $config['encryption']['key']);
-$offerController = new OfertaController($offerService, $config['jwt']['secret']);
+// Configurar autenticación primero
+$authService = new AuthService($config);
+$authController = new AuthController($authService, $config['jwt']['secret']);
 
-// Ruta protegida: obtiene las ofertas cifradas en un JWT
-$app->get('/ofertas', [$offerController, 'getOffers'])
-    ->add(new AuthMiddleware($config['jwt']['secret']));
+// Manejar OPTIONS para login primero
+$app->options('/auth/login', function ($request, $response, $args) {
+    return $response
+        ->withHeader('Access-Control-Allow-Origin', '*')
+        ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization, X-Client-Type')
+        ->withHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+});
 
-// Instanciar dependencias para Proveedores
-$proveedoresRepository = new ProveedoresRepository($pdo);
-$proveedoresService = new ProveedoresService($proveedoresRepository, $config['encryption']['key']);
-$proveedoresController = new ProveedoresController($proveedoresService, $config['jwt']['secret']);
+$app->post('/auth/login', [$authController, 'login']);
 
-// Ruta protegida: obtiene los proveedores cifrados en un JWT
-$app->get('/proveedores', [$proveedoresController, 'getProviders'])
-    ->add(new AuthMiddleware($config['jwt']['secret']));
+// Rutas protegidas
+$app->group('', function ($group) use ($config, $pdoProveedores, $pdoRepartidores) {
+    // Ofertas
+    $ofertasRepository = new OfertasRepository($pdoProveedores);
+    $offerService = new OfertaService($ofertasRepository, $config['encryption']['key']);
+    $offerController = new OfertaController($offerService, $config['jwt']['secret']);
+    $group->get('/ofertas', [$offerController, 'getOffers']);
 
-// Ejecutar la aplicación
+    // Proveedores
+    $proveedoresRepository = new ProveedoresRepository($pdoProveedores);
+    $proveedoresService = new ProveedoresService($proveedoresRepository, $config['encryption']['key']);
+    $proveedoresController = new ProveedoresController($proveedoresService, $config['jwt']['secret']);
+    $group->get('/proveedores', [$proveedoresController, 'getProveedores']);
+
+    // Repartidores
+    $repartidorRepository = new RepartidorRepository($pdoRepartidores);
+    $repartidorService = new RepartidorService($repartidorRepository, $config['encryption']['key']);
+    $repartidorController = new RepartidorController($repartidorService, $config['jwt']['secret']);
+    $group->post('/repartidor', [$repartidorController, 'insertVehiculo']);
+})->add(new AuthMiddleware($config['jwt']['secret']));
+
+// Catch-all para otras rutas OPTIONS (debe ir al final)
+$app->options('/{routes:.+}', function ($request, $response, $args) {
+    return $response;
+});
+
+
 $app->run();

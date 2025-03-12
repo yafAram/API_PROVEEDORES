@@ -11,14 +11,15 @@ class ProveedoresController {
     private $jwtSecret;
     
     public function __construct(ProveedoresService $proveedoresService, string $jwtSecret) {
-        $this->ProveedoresService = $proveedoresService;
-        $this->jwtSecret = $jwtSecret;
+        $this->proveedoresService = $proveedoresService;
+        $this->jwtSecret = $jwtSecret;  
     }
     
+    
     // Endpoint para obtener las ofertas cifradas dentro de un JWT
-    public function getOffers(Request $request, Response $response): Response {
+    public function getProveedores(Request $request, Response $response): Response {
         try {
-            $encryptedData = $this->proveedoresService->getEncryptedOffers();
+            $encryptedData = $this->proveedoresService->getEncryptedProveedores();
             $payload = [
                 'data' => $encryptedData,
                 'iat'  => time(),
@@ -30,6 +31,7 @@ class ProveedoresController {
             return $response->withHeader('Content-Type', 'application/json');
         } catch (\Exception $e) {
             $error = ['error' => 'Error al obtener proveedores: ' . $e->getMessage()];
+            error_log('Error al obtener proveedores: ' . $e->getMessage());
             $response->getBody()->write(json_encode($error));
             return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
         }

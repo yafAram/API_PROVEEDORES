@@ -1,7 +1,7 @@
 <?php
 namespace App\Model\Proveedor;
 
-class Proovedores{
+class Proveedores{
     private $IdProveedor;
     private $Usuario;
     private $RazonSocial;
