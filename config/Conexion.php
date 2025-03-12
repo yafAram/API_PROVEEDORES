@@ -2,7 +2,7 @@
 return [
     'db_proveedores' => [ 
         'host'     => '191.101.0.236',  // IP del servidor (ajusta si es localhost)
-        'dbname'   => 'proveedores',    // Nombre en minúsculas (como en Docker)
+        'dbname'   => 'Proveedores',    // Nombre en minúsculas (como en Docker)
         'user'     => 'root',
         'pass'     => '12345678',
         'port'     => '33061',          // Puerto de Proveedores en Docker Compose
@@ -10,7 +10,7 @@ return [
     ],
     'db_repartidores' => [ 
         'host'     => '191.101.0.236',  // Misma IP que Proveedores (si están en el mismo servidor)
-        'dbname'   => 'repartidores',   // Nombre en minúsculas (como en Docker)
+        'dbname'   => 'Repartidores',   // Nombre en minúsculas (como en Docker)
         'user'     => 'root',
         'pass'     => '12345678',
         'port'     => '33062',          // Puerto de Repartidores en Docker Compose

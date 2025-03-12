@@ -2,6 +2,7 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 use Slim\Factory\AppFactory;
+use Slim\Psr7\Request;
 use App\Database;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
@@ -25,7 +26,6 @@ $config = require __DIR__ . '/../config/Conexion.php';
 
 $app = AppFactory::create();
 
-
 // 1. Middleware CORS (PRIMERO)
 $app->add(new CorsMiddleware());
 
@@ -33,13 +33,9 @@ $app->add(new CorsMiddleware());
 $app->addBodyParsingMiddleware();
 
 // 3. Logger
-
-
-// Configuración de Monolog
 $logger = new Logger('api');
 $logFile = __DIR__ . '/../logs/app.log';
 $logger->pushHandler(new StreamHandler($logFile, Logger::DEBUG));
-
 // Middleware para loggear cada solicitud y respuesta
 $app->add(function ($request, $handler) use ($logger) {
     $logger->info('Incoming Request', [
@@ -88,7 +84,25 @@ try {
 $authService = new AuthService($config);
 $authController = new AuthController($authService, $config['jwt']['secret']);
 
-// Manejar OPTIONS para login primero
+// ==================================================
+// SECCIÓN MODIFICADA: REORDENAMIENTO DE RUTAS
+// ==================================================
+
+// Ruta raíz GET /
+$app->get('/', function (Request $request, Response $response) {
+    $response->getBody()->write(json_encode([
+        "message" => "Bienvenido a la API de Proveedores",
+        "endpoints" => [
+            "login" => "/auth/login (POST)",
+            "ofertas" => "/ofertas (GET)",
+            "proveedores" => "/proveedores (GET)",
+            "repartidor" => "/repartidor (POST)"
+        ]
+    ]));
+    return $response->withHeader('Content-Type', 'application/json');
+});
+
+// OPTIONS para /auth/login (CORS Preflight)
 $app->options('/auth/login', function ($request, $response, $args) {
     return $response
         ->withHeader('Access-Control-Allow-Origin', '*')
@@ -96,6 +110,7 @@ $app->options('/auth/login', function ($request, $response, $args) {
         ->withHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
 });
 
+// POST para /auth/login 
 $app->post('/auth/login', [$authController, 'login']);
 
 // Rutas protegidas
@@ -119,10 +134,15 @@ $app->group('', function ($group) use ($config, $pdoProveedores, $pdoRepartidore
     $group->post('/repartidor', [$repartidorController, 'insertVehiculo']);
 })->add(new AuthMiddleware($config['jwt']['secret']));
 
-// Catch-all para otras rutas OPTIONS (debe ir al final)
+// Catch-all para 404 (DEBE IR AL FINAL)
+$app->map(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], '/{routes:.+}', function ($request, $response) {
+    $response->getBody()->write(json_encode(["error" => "Ruta no encontrada"]));
+    return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+});
+
+// Catch-all para OPTIONS (DEBE IR AL FINAL)
 $app->options('/{routes:.+}', function ($request, $response, $args) {
     return $response;
 });
-
 
 $app->run();
