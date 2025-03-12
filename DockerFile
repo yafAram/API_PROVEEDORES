@@ -16,3 +16,8 @@ WORKDIR /var/www/html/
 
 # Ajustar permisos
 RUN chown -R www-data:www-data /var/www/html/
+
+
+
+
+
