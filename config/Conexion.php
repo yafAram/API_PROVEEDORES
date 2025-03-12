@@ -1,19 +1,19 @@
 <?php
 return [
-    'db_proveedores' => [ // Base de datos principal (Proveedores)
-        'host'     => 'localhost',
-        'dbname'   => 'Proveedores',
+    'db_proveedores' => [ 
+        'host'     => '191.101.0.236',  // IP del servidor (ajusta si es localhost)
+        'dbname'   => 'proveedores',    // Nombre en minúsculas (como en Docker)
         'user'     => 'root',
         'pass'     => '12345678',
-        'port'     => '3307',
+        'port'     => '33061',          // Puerto de Proveedores en Docker Compose
         'charset'  => 'utf8mb4'
     ],
-    'db_repartidores' => [ // Nueva base de datos para Repartidores
-        'host'     => 'localhost',
-        'dbname'   => 'Repartidores', // Nombre de la segunda base de datos
+    'db_repartidores' => [ 
+        'host'     => '191.101.0.236',  // Misma IP que Proveedores (si están en el mismo servidor)
+        'dbname'   => 'repartidores',   // Nombre en minúsculas (como en Docker)
         'user'     => 'root',
         'pass'     => '12345678',
-        'port'     => '3307',
+        'port'     => '33062',          // Puerto de Repartidores en Docker Compose
         'charset'  => 'utf8mb4'
     ],
     'jwt' => [
