@@ -13,13 +13,13 @@ class OfertasRepository {
 
     // Retorna un array de objetos Ofertas
     public function getAll(): array {
-        $stmt = $this->pdo->prepare("SELECT * FROM proovedor_ofertas");
+        $stmt = $this->pdo->prepare("SELECT * FROM Proveedor_Ofertas");
         $stmt->execute();
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $ofertasArray = [];
-        if ($data) {
+        if($data){
             foreach ($data as $row) {
-                $oferta = new Ofertas(
+                $ofertasArray[] = new Ofertas(
                     $row['IdOferta'],
                     $row['IdProveedor'],
                     $row['NombreProducto'],
@@ -31,9 +31,10 @@ class OfertasRepository {
                     $row['ComentariosAdicionales'],
                     $row['FechaPublicacion']
                 );
-                $ofertasArray[] = $oferta;
             }
         }
+        error_log("OfertasRepository::getAll() retornó " . count($ofertasArray) . " ofertas.");
         return $ofertasArray;
+
     }
 }

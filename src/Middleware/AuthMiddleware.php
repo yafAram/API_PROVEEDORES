@@ -21,15 +21,22 @@ class AuthMiddleware {
             $response->getBody()->write(json_encode(['error' => 'Token no proporcionado']));
             return $response->withStatus(401)->withHeader('Content-Type', 'application/json');
         }
-        $token = $matches[1];
+        // Extraer y limpiar el token:
+        $token = trim($matches[1]);
+        $token = preg_replace('/[\x00-\x1F\x7F]/', '', $token);
+        error_log('Token limpio: ' . $token);
+        
         try {
             $decoded = JWT::decode($token, new Key($this->jwtSecret, 'HS256'));
+            error_log('Token decodificado: ' . json_encode($decoded));
             $request = $request->withAttribute('user', $decoded);
         } catch (\Exception $e) {
             $response = new Response();
-            $response->getBody()->write(json_encode(['error' => 'Token inválido o expirado']));
-            return $response->withStatus(401)->withHeader('Content-Type', 'application/json');
+            error_log('Error decodificando JWT: ' . $e->getMessage());
+            $response->getBody()->write(json_encode(['error' => 'Token inválido o expirado', 'message' => $e->getMessage()]));
+            return $response->withStatus(403)->withHeader('Content-Type', 'application/json');
         }
+        
         return $handler->handle($request);
     }
 }

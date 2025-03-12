@@ -12,8 +12,9 @@ class OfertaController {
     
     public function __construct(OfertaService $offerService, string $jwtSecret) {
         $this->offerService = $offerService;
-        $this->jwtSecret = $jwtSecret;
+        $this->jwtSecret = $jwtSecret;  // <-- ERROR: 'jwtaSecret' no está definido
     }
+    
     
     // Endpoint para obtener las ofertas cifradas dentro de un JWT
     public function getOffers(Request $request, Response $response): Response {
@@ -30,6 +31,7 @@ class OfertaController {
             return $response->withHeader('Content-Type', 'application/json');
         } catch (\Exception $e) {
             $error = ['error' => 'Error al obtener ofertas: ' . $e->getMessage()];
+            error_log('Error al obtener ofertas: ' . $e->getMessage());
             $response->getBody()->write(json_encode($error));
             return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
         }

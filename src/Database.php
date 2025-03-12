@@ -9,7 +9,7 @@ class Database {
     
     public function __construct(array $config) {
         $db = $config['db'];
-        $dsn = "mysql:host={$db['host']};dbname={$db['dbname']};charset={$db['charset']}";
+        $dsn = "mysql:host={$db['host']};port={$db['port']};dbname={$db['dbname']}";
         try {
             $this->pdo = new PDO($dsn, $db['user'], $db['pass'], [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
