@@ -1,13 +1,10 @@
-# Usamos una imagen ligera basada en Alpine con PHP y Apache
-FROM php:8.1-apache-alpine
+FROM php:8.1-apache
 
-# Instalar dependencias y extensiones necesarias
-RUN apk add --no-cache libzip-dev unzip && \
-    docker-php-ext-install pdo pdo_mysql
+# Instalar extensiones necesarias
+RUN docker-php-ext-install pdo pdo_mysql
 
-# Habilitar mod_rewrite en Apache
-RUN sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/httpd.conf && \
-    sed -i 's/DirectoryIndex index.html/DirectoryIndex index.php/g' /etc/apache2/httpd.conf
+# Habilitar mod_rewrite para Apache
+RUN a2enmod rewrite
 
 # Copiar el código de la aplicación al directorio de Apache
 COPY . /var/www/html/
